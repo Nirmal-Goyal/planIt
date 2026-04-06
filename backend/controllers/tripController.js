@@ -53,6 +53,12 @@ exports.getTripById = async(req, res) => {
                 message: "trip not found"
             })
         }
+
+        if(trip.userId.toString() !== req.user._id.toString()){
+            return res.status(403).json({
+                message: "not authorized to access this trip"
+            })
+        }
         res.json(trip)
     } catch (error) {
         res.status(500).json({
@@ -71,6 +77,13 @@ exports.deleteTrip = async(req, res) => {
                 message: "trip not found"
             })
         }
+
+        if(trip.userId.toString()!==req.user._id.toString()){
+            return res.status(403).json({
+                message: "not authorized to delete this trip"
+            })
+        }
+
         await trip.deleteOne();
 
         res.json({

@@ -1,4 +1,6 @@
 const Trip = require("../models/Trip.model")
+const Day = require("../models/Day.model")
+const Task = require("../models/Task.model")
 
 // CREATE TRIP
 exports.createTrip = async(req, res) => {
@@ -90,6 +92,48 @@ exports.deleteTrip = async(req, res) => {
             message: "trip deleted successfully"
         })
     } catch (error) {
+        res.status(500).json({
+            message: error.message
+        })
+    }
+}
+
+
+// GET TRIP OVERVIEW (Trip + Days + Tasks)
+exports.getTripOverview = async(req, res) => {
+    try{
+        const tripId = req.params.id
+        const trip = await Trip.findById(tripId)
+        if(!trip){
+            return res.status(404).json({
+                message: "trip not found"
+            })
+        }
+        if(trip.userId.toString() !== req.user._id.toString()){
+            return res.status(403).json({
+                message: "not authorized"
+            })
+        }
+
+        const days = await Day.find({tripId}).sort({order: 1})
+        const daysWithTasks = await Promise.all(
+            days.map(async (day) => {
+                const tasks = await Task.find({
+                    dayId: day._id,
+                }).sort({createdAt: 1})
+
+                return {
+                    ...day.toObject(),
+                    tasks
+                }
+            })
+        )
+
+        res.json({
+            trip,
+            days: daysWithTasks
+        })
+    }catch(error){
         res.status(500).json({
             message: error.message
         })
